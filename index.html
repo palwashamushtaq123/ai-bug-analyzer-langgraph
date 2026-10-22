@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Bug Report Analyzer | Enterprise Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .glow:hover { box-shadow: 0 0 25px rgba(59, 130, 246, 0.4); }
+        @keyframes pulse-slow { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .animate-pulse-slow { animation: pulse-slow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between">
+
+    <!-- Navbar -->
+    <header class="glass border-b border-slate-800 py-4 px-6 sticky top-0 z-50 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+            <span class="text-3xl">🐞</span>
+            <div>
+                <h1 class="text-lg font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">AI Bug Report Analyzer</h1>
+                <p class="text-xs text-slate-400">Powered by LangGraph & Google Gemini</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2">
+            <span class="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+            <span class="text-xs font-medium text-emerald-400">System Online</span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-6xl mx-auto px-4 py-8 w-full grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left Panel: Input & Controls -->
+        <section class="lg:col-span-5 flex flex-col space-y-6">
+            <div class="glass p-6 rounded-2xl shadow-xl">
+                <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">📝 Bug Description Input</h2>
+                <textarea id="bugInput" rows="6" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-sm text-slate-200 focus:outline-none focus:border-blue-500 transition resize-none" placeholder="Describe the bug in natural language..."></textarea>
+                
+                <div class="flex space-x-3 mt-4">
+                    <button onclick="loadSample()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-2.5 px-4 rounded-xl text-xs transition border border-slate-700">Load Sample</button>
+                    <button onclick="analyzeBug()" id="analyzeBtn" class="flex-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 px-6 rounded-xl text-sm transition shadow-lg shadow-blue-600/30 flex items-center justify-center space-x-2">
+                        <span>Analyze Bug</span>
+                        <span>⚡</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Pipeline Visualizer -->
+            <div class="glass p-6 rounded-2xl shadow-xl">
+                <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">🔄 LangGraph Execution Pipeline</h2>
+                <div class="space-y-3">
+                    <div id="node1" class="flex items-center space-x-3 p-3 rounded-xl bg-slate-900/50 border border-slate-800 text-slate-400 transition">
+                        <span class="text-lg">🔍</span>
+                        <div class="text-xs font-medium">Node 1: Bug Analysis & Extraction</div>
+                    </div>
+                    <div id="node2" class="flex items-center space-x-3 p-3 rounded-xl bg-slate-900/50 border border-slate-800 text-slate-400 transition">
+                        <span class="text-lg">🚨</span>
+                        <div class="text-xs font-medium">Node 2: Severity Classification</div>
+                    </div>
+                    <div id="node3" class="flex items-center space-x-3 p-3 rounded-xl bg-slate-900/50 border border-slate-800 text-slate-400 transition">
+                        <span class="text-lg">🛠️</span>
+                        <div class="text-xs font-medium">Node 3: Root Cause Suggestion</div>
+                    </div>
+                    <div id="node4" class="flex items-center space-x-3 p-3 rounded-xl bg-slate-900/50 border border-slate-800 text-slate-400 transition">
+                        <span class="text-lg">📄</span>
+                        <div class="text-xs font-medium">Node 4: Report Formatting</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Panel: Output Dashboard -->
+        <section class="lg:col-span-7 flex flex-col">
+            <div class="glass p-6 rounded-2xl shadow-xl flex-1 flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-wider">📊 Structured Report Output</h2>
+                        <div id="severityBadge" class="hidden px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide"></div>
+                    </div>
+
+                    <div id="placeholderView" class="text-center py-20 text-slate-500">
+                        <p class="text-4xl mb-3">🚀</p>
+                        <p class="text-sm">Enter a bug description and click Analyze to view the report.</p>
+                    </div>
+
+                    <div id="resultView" class="hidden space-y-6">
+                        <div>
+                            <span class="text-xs text-blue-400 font-semibold uppercase">Bug Title</span>
+                            <h3 id="resTitle" class="text-lg font-bold text-white mt-1"></h3>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                                <span class="text-xs text-indigo-400 font-semibold uppercase">Affected Feature</span>
+                                <p id="resFeature" class="text-sm text-slate-200 mt-1 font-medium"></p>
+                            </div>
+                            <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                                <span class="text-xs text-amber-400 font-semibold uppercase">Severity</span>
+                                <p id="resSeverity" class="text-sm text-slate-200 mt-1 font-medium"></p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <span class="text-xs text-emerald-400 font-semibold uppercase">Issue Summary</span>
+                            <p id="resSummary" class="text-sm text-slate-300 mt-1 leading-relaxed bg-slate-900/40 p-4 rounded-xl border border-slate-800"></p>
+                        </div>
+
+                        <div>
+                            <span class="text-xs text-purple-400 font-semibold uppercase">Potential Root Causes</span>
+                            <ul id="resCauses" class="mt-2 space-y-2 text-sm text-slate-300"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="actionToolbar" class="hidden mt-6 pt-4 border-t border-slate-800 flex justify-end space-x-3">
+                    <button onclick="copyReport()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium px-4 py-2 rounded-xl transition border border-slate-700">Copy Report</button>
+                    <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 py-2 rounded-xl transition shadow-md">Print PDF</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="text-center py-6 text-xs text-slate-500 border-t border-slate-900">
+        AI Bug Analyzer Portfolio Project • Built with LangGraph, FastAPI & Gemini
+    </footer>
+
+    <script>
+        function loadSample() {
+            document.getElementById('bugInput').value = "When users try to check out on the web app using PayPal, the payment modal opens and spins indefinitely after hitting confirm. The console throws a 504 Gateway Timeout from the /api/v1/payments/paypal endpoint, and money isn't deducted, but the cart item count resets.";
+        }
+
+        async function analyzeBug() {
+            const desc = document.getElementById('bugInput').value.trim();
+            if (!desc) {
+                alert("Please enter a bug description first!");
+                return;
+            }
+
+            const btn = document.getElementById('analyzeBtn');
+            btn.disabled = true;
+            btn.innerText = "Analyzing...";
+
+            // Reset UI states
+            document.getElementById('placeholderView').classList.add('hidden');
+            document.getElementById('resultView').classList.add('hidden');
+            document.getElementById('actionToolbar').classList.add('hidden');
+            document.getElementById('severityBadge').classList.add('hidden');
+
+            const nodes = ['node1', 'node2', 'node3', 'node4'];
+            for (let i = 0; i < nodes.length; i++) {
+                const el = document.getElementById(nodes[i]);
+                el.className = "flex items-center space-x-3 p-3 rounded-xl bg-blue-950/40 border border-blue-500/50 text-blue-300 animate-pulse-slow";
+                await new Promise(r => setTimeout(r, 600));
+            }
+
+            try {
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ description: desc })
+                });
+
+                if (!response.ok) throw new Error("Failed to analyze bug report.");
+
+                const data = await response.json();
+
+                // Populate data
+                document.getElementById('resTitle').innerText = data.title;
+                document.getElementById('resFeature').innerText = data.affected_feature;
+                document.getElementById('resSeverity').innerText = data.severity;
+                document.getElementById('resSummary').innerText = data.issue_summary;
+
+                const causesList = document.getElementById('resCauses');
+                causesList.innerHTML = '';
+                data.root_causes.forEach(cause => {
+                    const li = document.createElement('li');
+                    li.className = "bg-slate-900/60 p-3 rounded-xl border border-slate-800 text-xs flex items-start space-x-2";
+                    li.innerHTML = `<span class="text-purple-400">🔹</span><span>${cause}</span>`;
+                    causesList.appendChild(li);
+                });
+
+                // Style badge
+                const badge = document.getElementById('severityBadge');
+                badge.innerText = data.severity;
+                badge.className = `px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${
+                    data.severity.toLowerCase() === 'critical' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                    data.severity.toLowerCase() === 'high' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
+                    data.severity.toLowerCase() === 'medium' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                    'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                }`;
+                badge.classList.remove('hidden');
+
+                document.getElementById('resultView').classList.remove('hidden');
+                document.getElementById('actionToolbar').classList.remove('hidden');
+
+                // Mark nodes complete
+                nodes.forEach(id => {
+                    document.getElementById(id).className = "flex items-center space-x-3 p-3 rounded-xl bg-emerald-950/20 border border-emerald-800/50 text-emerald-400";
+                });
+
+            } catch (err) {
+                alert("Error: " + err.message);
+                document.getElementById('placeholderView').classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<span>Analyze Bug</span><span>⚡</span>`;
+            }
+        }
+
+        function copyReport() {
+            const reportText = document.getElementById('resTitle').innerText + "\n\n" +
+               document.getElementById('resSummary').innerText;
+            navigator.clipboard.writeText(reportText);
+            alert("Report copied to clipboard!");
+        }
+    </script>
+</body>
+</html>
