@@ -8,7 +8,7 @@ An enterprise-grade, multi-agent AI assistant that automatically analyzes raw na
 
 > *Enterprise UI showing live LangGraph node-state tracking and structured root-cause investigation outputs.*
 
-![AI Bug Report Analyzer Enterprise Dashboard](Asset/AI%20Bug%20Report%20Analyzer%20Enterprise%20Dashboard_2.png)
+![Dashboard](Asset/AI%20Bug%20Report%20Analyzer%20Enterprise%20Dashboard.png)
 
 ---
 
